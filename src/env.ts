@@ -11,7 +11,24 @@ export const variables = defineEnvVars({
 	},
 	OIDC_DISCOVERY_URL: {
 		description:
-			'OpenID Connect discovery document of the identity provider, e.g. `https://id.example.com/.well-known/openid-configuration`.'
+			'OpenID Connect discovery document of the identity provider, e.g. `https://id.example.com/.well-known/openid-configuration`.',
+		// Better Auth fetches this URL as given; the issuer URL alone returns HTML and the
+		// provider is silently skipped. Empty is allowed for local work without sign-in.
+		schema: (value) => {
+			if (!value) return value;
+			let url: URL;
+			try {
+				url = new URL(value);
+			} catch {
+				throw new Error('must be an absolute URL');
+			}
+			if (!url.pathname.endsWith('/.well-known/openid-configuration')) {
+				throw new Error(
+					`must be the discovery document URL ending in /.well-known/openid-configuration, e.g. ${url.origin}/.well-known/openid-configuration`
+				);
+			}
+			return value;
+		}
 	},
 	OIDC_CLIENT_ID: { description: 'Client ID of the Dolmo OIDC client.' },
 	OIDC_CLIENT_SECRET: {

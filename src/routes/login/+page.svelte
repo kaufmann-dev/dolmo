@@ -11,19 +11,39 @@
 	let { data }: PageProps = $props();
 
 	let pending = $state(false);
-	let startFailed = $state(false);
+	let startError = $state<string | null>(null);
+
+	const callbackError = $derived(
+		data.errorCode ? `The identity provider returned “${data.errorCode}”.` : null
+	);
+	const failure = $derived(startError ?? callbackError);
+
+	function describeStartError(error: { status: number; code?: string }): string {
+		if (error.code === 'PROVIDER_NOT_FOUND') {
+			return 'Sign-in is not configured correctly: the identity provider could not be loaded. The server log has details.';
+		}
+		if (error.status >= 500) {
+			return `The server could not start sign-in (error ${error.status}). Try again in a moment.`;
+		}
+		return `Sign-in could not start (error ${error.status}${error.code ? `, ${error.code}` : ''}).`;
+	}
 
 	async function signIn() {
 		pending = true;
-		startFailed = false;
-		const { error } = await authClient.signIn.social({
-			provider: OIDC_PROVIDER_ID,
-			callbackURL: data.redirectTo,
-			errorCallbackURL: `${resolve('/login')}?redirectTo=${encodeURIComponent(data.redirectTo)}`
-		});
-		if (error) {
+		startError = null;
+		try {
+			const { error } = await authClient.signIn.social({
+				provider: OIDC_PROVIDER_ID,
+				callbackURL: data.redirectTo,
+				errorCallbackURL: `${resolve('/login')}?redirectTo=${encodeURIComponent(data.redirectTo)}`
+			});
+			if (error) {
+				pending = false;
+				startError = describeStartError(error);
+			}
+		} catch {
 			pending = false;
-			startFailed = true;
+			startError = 'Dolmo could not be reached. Check your connection and try again.';
 		}
 	}
 </script>
@@ -41,12 +61,10 @@
 		</p>
 	</div>
 
-	{#if data.failed || startFailed}
+	{#if failure}
 		<Alert.Root variant="destructive">
 			<Alert.Title>Sign-in did not complete</Alert.Title>
-			<Alert.Description
-				>Try again. If it keeps failing, ask the administrator for access.</Alert.Description
-			>
+			<Alert.Description>{failure}</Alert.Description>
 		</Alert.Root>
 	{/if}
 

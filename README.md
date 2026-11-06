@@ -102,16 +102,16 @@ none, so a declined turn shows an error and can be repeated.
 
 All variables are required. Copy `.env.example` to `.env` for local development.
 
-| Variable             | Purpose                                                           |
-| -------------------- | ----------------------------------------------------------------- |
-| `ANTHROPIC_API_KEY`  | Anthropic API key for Claude.                                     |
-| `ELEVENLABS_API_KEY` | ElevenLabs API key with Speech to Text and Text to Speech access. |
-| `DATABASE_URL`       | PostgreSQL connection string for sign-in sessions.                |
-| `ORIGIN`             | Public base URL of the app, e.g. `http://localhost:5173`.         |
-| `BETTER_AUTH_SECRET` | High-entropy secret (at least 32 characters) that signs sessions. |
-| `OIDC_DISCOVERY_URL` | OpenID Connect discovery URL of the identity provider.            |
-| `OIDC_CLIENT_ID`     | Client ID of the Dolmo OIDC client.                               |
-| `OIDC_CLIENT_SECRET` | Client secret of the Dolmo OIDC client.                           |
+| Variable             | Purpose                                                                                                                          |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `ANTHROPIC_API_KEY`  | Anthropic API key for Claude.                                                                                                    |
+| `ELEVENLABS_API_KEY` | ElevenLabs API key with Speech to Text and Text to Speech access.                                                                |
+| `DATABASE_URL`       | PostgreSQL connection string for sign-in sessions.                                                                               |
+| `ORIGIN`             | Public base URL of the app, e.g. `http://localhost:5173`.                                                                        |
+| `BETTER_AUTH_SECRET` | High-entropy secret (at least 32 characters) that signs sessions.                                                                |
+| `OIDC_DISCOVERY_URL` | Full discovery document URL, e.g. `https://auth.example.com/.well-known/openid-configuration`; the issuer URL alone is rejected. |
+| `OIDC_CLIENT_ID`     | Client ID of the Dolmo OIDC client.                                                                                              |
+| `OIDC_CLIENT_SECRET` | Client secret of the Dolmo OIDC client.                                                                                          |
 
 ## Authentication Setup
 
