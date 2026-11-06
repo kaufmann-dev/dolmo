@@ -36,7 +36,7 @@ Speech to Text and Text to Speech access, and an OIDC client for sign-in (see
    ```bash
    podman run \
      --name postgres-sveltekit \
-     --env-file .env \
+     --env POSTGRES_PASSWORD=postgres \
      --publish 5432:5432 \
      --volume postgres-sveltekit-data:/var/lib/postgresql/data \
      --detach \
@@ -44,7 +44,8 @@ Speech to Text and Text to Speech access, and an OIDC client for sign-in (see
    pnpm drizzle-kit migrate
    ```
 
-   Later, start the existing container with `podman start postgres-sveltekit`.
+   It matches `DATABASE_URL="postgres://postgres:postgres@localhost:5432/postgres"`. Later, start
+   the existing container with `podman start postgres-sveltekit`.
 
 4. Start the app and open the URL Vite prints (normally `http://localhost:5173`):
 
@@ -101,17 +102,16 @@ none, so a declined turn shows an error and can be repeated.
 
 All variables are required. Copy `.env.example` to `.env` for local development.
 
-| Variable                                            | Purpose                                                                                |
-| --------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| `ANTHROPIC_API_KEY`                                 | Anthropic API key for Claude.                                                          |
-| `ELEVENLABS_API_KEY`                                | ElevenLabs API key with Speech to Text and Text to Speech access.                      |
-| `DATABASE_URL`                                      | PostgreSQL connection string for sign-in sessions.                                     |
-| `ORIGIN`                                            | Public base URL of the app, e.g. `http://localhost:5173`.                              |
-| `BETTER_AUTH_SECRET`                                | High-entropy secret (at least 32 characters) that signs sessions.                      |
-| `OIDC_DISCOVERY_URL`                                | OpenID Connect discovery URL of the identity provider.                                 |
-| `OIDC_CLIENT_ID`                                    | Client ID of the Dolmo OIDC client.                                                    |
-| `OIDC_CLIENT_SECRET`                                | Client secret of the Dolmo OIDC client.                                                |
-| `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | Credentials for the local Podman database only; keep them in sync with `DATABASE_URL`. |
+| Variable             | Purpose                                                           |
+| -------------------- | ----------------------------------------------------------------- |
+| `ANTHROPIC_API_KEY`  | Anthropic API key for Claude.                                     |
+| `ELEVENLABS_API_KEY` | ElevenLabs API key with Speech to Text and Text to Speech access. |
+| `DATABASE_URL`       | PostgreSQL connection string for sign-in sessions.                |
+| `ORIGIN`             | Public base URL of the app, e.g. `http://localhost:5173`.         |
+| `BETTER_AUTH_SECRET` | High-entropy secret (at least 32 characters) that signs sessions. |
+| `OIDC_DISCOVERY_URL` | OpenID Connect discovery URL of the identity provider.            |
+| `OIDC_CLIENT_ID`     | Client ID of the Dolmo OIDC client.                               |
+| `OIDC_CLIENT_SECRET` | Client secret of the Dolmo OIDC client.                           |
 
 ## Authentication Setup
 
