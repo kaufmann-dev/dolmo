@@ -8,7 +8,6 @@
 	import { Label } from '#lib/components/ui/label/index.js';
 	import * as NativeSelect from '#lib/components/ui/native-select/index.js';
 	import LanguageGrid from '#lib/components/language-grid.svelte';
-	import { Toggle } from '#lib/components/ui/toggle/index.js';
 	import { languageName } from '#lib/languages.ts';
 	import { EFFORTS, MODEL_IDS, MODEL_LABELS } from '#lib/models.ts';
 	import type { TranslationSession } from '#lib/translation-session.svelte.ts';
@@ -34,24 +33,24 @@
 			<div class="flex flex-col gap-3">
 				<h2 class="text-sm font-medium text-muted-foreground">How people talk</h2>
 				<div class="grid grid-cols-2 gap-2" role="group" aria-label="How people talk">
-					<Toggle
-						variant="outline"
-						pressed={session.mode === 'conversation'}
-						onPressedChange={() => (session.mode = 'conversation')}
-						class="h-11 gap-2 rounded-2xl aria-pressed:border-primary aria-pressed:bg-primary/15"
+					<Button
+						variant={session.mode === 'conversation' ? 'default' : 'outline'}
+						class="h-11 gap-2 rounded-2xl"
+						aria-pressed={session.mode === 'conversation'}
+						onclick={() => (session.mode = 'conversation')}
 					>
 						<MicIcon class="size-4" />
 						Conversation
-					</Toggle>
-					<Toggle
-						variant="outline"
-						pressed={session.mode === 'push-to-listen'}
-						onPressedChange={() => (session.mode = 'push-to-listen')}
-						class="h-11 gap-2 rounded-2xl aria-pressed:border-primary aria-pressed:bg-primary/15"
+					</Button>
+					<Button
+						variant={session.mode === 'push-to-listen' ? 'default' : 'outline'}
+						class="h-11 gap-2 rounded-2xl"
+						aria-pressed={session.mode === 'push-to-listen'}
+						onclick={() => (session.mode = 'push-to-listen')}
 					>
 						<HandIcon class="size-4" />
 						Push to listen
-					</Toggle>
+					</Button>
 				</div>
 				<p class="text-sm text-muted-foreground">
 					{session.mode === 'push-to-listen'
