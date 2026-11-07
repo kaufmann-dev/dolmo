@@ -53,16 +53,19 @@ Speech to Text and Text to Speech access, and an OIDC client for sign-in (see
    pnpm dev
    ```
 
-5. Sign in, select at least two languages, press **Start** and allow microphone access. Speak,
-   pause, and Dolmo answers in the other languages.
+5. Sign in, add at least two languages, press **Start conversation** and allow microphone access.
+   Speak, pause, and Dolmo answers in the other languages.
 
 ## Using Dolmo
 
-- **Languages**: select every language spoken at the table. Translations are spoken in the
-  order you selected them. Languages are locked while a conversation runs.
-- **Claude model and effort**: pick Opus 5.5, Sonnet 5.5 or Haiku 5.5, and an effort from `low`
-  to `max`. Changes apply from the next turn, and every turn shows how long Claude took, so you
-  can compare settings. Lower effort and smaller models answer faster.
+- **Languages**: on the setup screen, tap **Add language**, search or scroll, and pick every
+  language spoken at the table. They appear as chips in the order you chose them, and
+  translations are spoken in that order. Remove a chip with its ×. Languages are locked while a
+  conversation runs.
+- **Claude settings**: open **Claude settings** on the setup screen to pick Opus 5.5, Sonnet 5.5
+  or Haiku 5.5, and an effort from `low` to `max`. Changes apply from the next turn, and every
+  turn shows how long Claude took, so you can compare settings. Lower effort and smaller models
+  answer faster.
 - **Taking turns**: Dolmo works like a walkie-talkie. A pause of about 1.5 seconds ends a turn.
   If someone is still talking when a translation is ready, Dolmo waits for them to finish
   (up to five seconds). The microphone is muted while Dolmo speaks, so it never translates
