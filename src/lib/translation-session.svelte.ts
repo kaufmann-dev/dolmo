@@ -5,10 +5,19 @@ import { DEFAULT_EFFORT, DEFAULT_MODEL, type Effort, type ModelId } from '#lib/m
 import { MAX_HISTORY_TURNS, type TurnDecision, type TurnRecord } from '#lib/turn.ts';
 import { decideTurn, transcriptionToken } from '#lib/translate.remote.ts';
 
-/** Seconds of silence after which Scribe closes a speech segment. */
-const VAD_SILENCE_SECONDS = 0.8;
+/**
+ * Seconds of silence after which Scribe closes a speech segment. Long enough that a pause inside
+ * a sentence does not end the utterance; higher values add latency after each turn.
+ */
+const VAD_SILENCE_SECONDS = 1.5;
+/** Shortest speech Scribe commits; anything briefer is treated as a click or cough. */
+const MIN_SPEECH_MS = 300;
 /** Keep the microphone muted this long after playback so the tail of Dolmo's voice is not heard. */
 const MIC_TAIL_MS = 300;
+/** Longest Dolmo waits for the speaker to finish before it starts talking anyway. */
+const MAX_YIELD_WAIT_MS = 5000;
+/** How often Dolmo checks whether the speaker is still talking while it waits. */
+const YIELD_POLL_MS = 100;
 /** A connection that drops sooner than this after opening is not reopened automatically. */
 const MIN_RECONNECT_INTERVAL_MS = 10_000;
 
@@ -41,6 +50,11 @@ function wait(ms: number): Promise<void> {
 	return new Promise((done) => setTimeout(done, ms));
 }
 
+/** Drops noise that Scribe commits as punctuation or symbols only. */
+function isSpeechText(text: string): boolean {
+	return /[\p{L}\p{N}]/u.test(text);
+}
+
 /**
  * One translation session on a shared device: listens through Scribe, asks Claude what each
  * utterance is, speaks the result, and keeps the conversation log. Half-duplex: the
@@ -63,6 +77,8 @@ export class TranslationSession {
 	#connection: RealtimeConnection | null = null;
 	#connectedAt = 0;
 	#active = false;
+	/** True from the start of playback until the mic tail has passed; transcripts are ignored. */
+	#muted = false;
 	#queue: Job[] = [];
 	#draining = false;
 	#turnCount = 0;
@@ -112,6 +128,7 @@ export class TranslationSession {
 		this.#connection = null;
 		connection?.close();
 		this.partial = '';
+		this.#muted = false;
 		if (!this.#draining) this.status = 'idle';
 	}
 
@@ -131,13 +148,18 @@ export class TranslationSession {
 			import('@elevenlabs/client'),
 			transcriptionToken()
 		]);
+		// No pinned languageCode: Scribe picks among exactly the session languages.
+		// vadThreshold is deliberately unset, because filterBackgroundAudio applies its own
+		// lower threshold only when none is given.
 		const connection = Scribe.connect({
 			token,
 			modelId: 'scribe_v2_realtime',
 			commitStrategy: CommitStrategy.VAD,
 			vadSilenceThresholdSecs: VAD_SILENCE_SECONDS,
-			languageCode: this.languages[0],
-			secondaryLanguages: this.languages.slice(1),
+			minSpeechDurationMs: MIN_SPEECH_MS,
+			filterBackgroundAudio: true,
+			secondaryLanguages: [...this.languages],
+			includeLanguageDetection: true,
 			keyterms: ['Dolmo'],
 			noVerbatim: true,
 			microphone: {
@@ -149,18 +171,23 @@ export class TranslationSession {
 		});
 		this.#connection = connection;
 		this.#connectedAt = Date.now();
+		if (this.#muted) this.#setMuted(connection, true);
 
 		connection.on(RealtimeEvents.SESSION_STARTED, () => {
 			if (this.status === 'starting') this.status = 'listening';
 		});
 		connection.on(RealtimeEvents.PARTIAL_TRANSCRIPT, (data) => {
-			if (this.#connection === connection) this.partial = data.text;
+			if (this.#connection === connection && !this.#muted) this.partial = data.text;
 		});
 		connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT, (data) => {
-			if (this.#connection !== connection) return;
+			if (this.#connection !== connection || this.#muted) return;
 			this.partial = '';
 			const text = data.text.trim();
-			if (text) this.#enqueue({ type: 'utterance', text });
+			if (isSpeechText(text)) this.#enqueue({ type: 'utterance', text });
+		});
+		// TEMPORARY debug: confirm which language Scribe detects. Remove once verified.
+		connection.on(RealtimeEvents.FINAL_TRANSCRIPT_WITH_TIMESTAMPS, (data) => {
+			console.debug('[scribe] detected language:', data.language_code, data.text);
 		});
 		connection.on(RealtimeEvents.ERROR, (error) => {
 			if (this.#connection !== connection) return;
@@ -281,8 +308,11 @@ export class TranslationSession {
 
 	async #speak(items: SpeechItem[]): Promise<void> {
 		if (!this.#player || items.length === 0) return;
+		await this.#yieldToSpeaker();
 		const connection = this.#connection;
 		this.status = 'speaking';
+		this.partial = '';
+		this.#muted = true;
 		this.#setMuted(connection, true);
 		try {
 			await this.#player.play(
@@ -295,8 +325,15 @@ export class TranslationSession {
 			);
 			await wait(MIC_TAIL_MS);
 		} finally {
+			this.#muted = false;
 			this.#setMuted(connection, false);
 		}
+	}
+
+	/** Waits while the speaker is still mid-sentence, so Dolmo does not talk over them. */
+	async #yieldToSpeaker(): Promise<void> {
+		const deadline = Date.now() + MAX_YIELD_WAIT_MS;
+		while (this.partial && Date.now() < deadline) await wait(YIELD_POLL_MS);
 	}
 
 	#setMuted(connection: RealtimeConnection | null, muted: boolean): void {

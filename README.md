@@ -63,15 +63,18 @@ Speech to Text and Text to Speech access, and an OIDC client for sign-in (see
 - **Claude model and effort**: pick Opus 5.5, Sonnet 5.5 or Haiku 5.5, and an effort from `low`
   to `max`. Changes apply from the next turn, and every turn shows how long Claude took, so you
   can compare settings. Lower effort and smaller models answer faster.
-- **Taking turns**: Dolmo works like a walkie-talkie. A pause of about 0.8 seconds ends a turn,
-  and the microphone is muted while Dolmo speaks, so it never translates itself. **Skip** cuts
+- **Taking turns**: Dolmo works like a walkie-talkie. A pause of about 1.5 seconds ends a turn.
+  If someone is still talking when a translation is ready, Dolmo waits for them to finish
+  (up to five seconds). The microphone is muted while Dolmo speaks, so it never translates
+  itself. **Skip** cuts
   the current playback short; **Stop** ends listening but keeps the conversation on screen.
 - **Asking Dolmo**: "Dolmo, what did he say?" or "say that again" replays the earlier
   translation, only in your language. Questions such as "what does that word mean?" are
   answered briefly in your language only. Questions addressed to another person ("what did
   _you_ say about the price?") are translated as usual.
 - **Replay**: the play button next to any translation replays it.
-- Background noise, coughs and lone filler words are ignored and shown as muted lines.
+- Background noise is filtered by ElevenLabs before it reaches Claude. Coughs, filler words and
+  other non-speech are ignored and shown as muted lines.
 
 ## How It Works
 
