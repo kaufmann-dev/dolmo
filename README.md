@@ -7,7 +7,7 @@
 Dolmo is a live voice interpreter for people who don't share a language. Put one device on the
 table, pick the languages being spoken, and press Start. Whenever someone finishes speaking,
 Dolmo says the translation out loud in every other language, then listens again. It works with
-any number of people and languages; the 32 languages of ElevenLabs Flash v2.5 are available.
+any number of people and languages; the 32 languages of ElevenLabs Eleven v4 Turbo are available.
 
 Dolmo also understands when a question is meant for it rather than for the others. "What did he
 say again?" replays the last translation in the asker's language instead of translating the
@@ -90,7 +90,7 @@ Each turn passes through three services:
    Claude, which returns a structured decision: `translate` (into every other language),
    `repeat` (replay an earlier turn), `clarify` (answer the asker) or `ignore`. The server
    validates the decision before the browser sees it.
-3. **Speaking**: the server synthesizes each output with ElevenLabs Flash v2.5, and the browser
+3. **Speaking**: the server synthesizes each output with ElevenLabs Eleven v4 Turbo, and the browser
    plays them one after another and keeps the audio so repeats replay exactly what was said.
 
 Where to look in the code:

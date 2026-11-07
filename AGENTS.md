@@ -271,7 +271,7 @@ For Coolify and Railpack:
 
 ## Dolmo Pipeline
 
-- Flow per turn: Scribe v2 Realtime in the browser (`#lib/translation-session.svelte.ts`) → remote command `decideTurn` (`#lib/translate.remote.ts`) → Claude in `#lib/server/anthropic.ts` → `validateDecision` → `POST /api/speech` (ElevenLabs Flash v2.5) → playback in `#lib/audio/player.ts`.
+- Flow per turn: Scribe v2 Realtime in the browser (`#lib/translation-session.svelte.ts`) → remote command `decideTurn` (`#lib/translate.remote.ts`) → Claude in `#lib/server/anthropic.ts` → `validateDecision` → `POST /api/speech` (ElevenLabs Eleven v4 Turbo) → playback in `#lib/audio/player.ts`.
 - API keys stay on the server. The browser only receives single-use Scribe tokens from `transcriptionToken`.
 - Import `@elevenlabs/client` dynamically, as `#connect` does; it is browser-only and must not load during server rendering.
 - Keep the session half-duplex: mute the Scribe connection for the whole playback plus `MIC_TAIL_MS`, so Dolmo never transcribes its own voice. Run every utterance and replay through the session queue; never play audio outside it.

@@ -1,5 +1,5 @@
 /**
- * Languages Dolmo can both hear and speak: the 32 languages of ElevenLabs Flash v2.5
+ * Languages Dolmo can both hear and speak: the 32 languages of ElevenLabs Eleven v4 Turbo
  * (Scribe v2 Realtime covers all of them).
  */
 export const SUPPORTED_LANGUAGES = [
