@@ -2,6 +2,14 @@ import type { RealtimeConnection } from '@elevenlabs/client';
 import { SpeechPlayer, type SpeechItem } from '#lib/audio/player.ts';
 import { languageName, type LanguageCode } from '#lib/languages.ts';
 import { DEFAULT_EFFORT, DEFAULT_MODEL, type Effort, type ModelId } from '#lib/models.ts';
+import {
+	audioKey,
+	buildHistory,
+	findOutput,
+	isSpeechText,
+	speechItemsFor,
+	waitWhile
+} from '#lib/session-logic.ts';
 import { MAX_HISTORY_TURNS, type TurnDecision, type TurnRecord } from '#lib/turn.ts';
 import { decideTurn, transcriptionToken } from '#lib/translate.remote.ts';
 
@@ -26,15 +34,11 @@ export type SessionStatus = 'idle' | 'starting' | 'listening' | 'thinking' | 'sp
 type TurnMeta = { durationMs: number; model: ModelId; effort: Effort };
 
 export type SessionTurn =
-	| (TurnRecord & TurnMeta)
+	| (TurnRecord & TurnMeta & { speechMs?: number })
 	| ({ id: string; kind: 'error'; original: string; message: string } & TurnMeta);
 
 type Job =
 	{ type: 'utterance'; text: string } | { type: 'replay'; turnId: string; language: string };
-
-export function audioKey(turnId: string, language: string): string {
-	return `${turnId}:${language}`;
-}
 
 function errorMessage(error: unknown, fallback: string): string {
 	if (error && typeof error === 'object') {
@@ -48,11 +52,6 @@ function errorMessage(error: unknown, fallback: string): string {
 
 function wait(ms: number): Promise<void> {
 	return new Promise((done) => setTimeout(done, ms));
-}
-
-/** Drops noise that Scribe commits as punctuation or symbols only. */
-function isSpeechText(text: string): boolean {
-	return /[\p{L}\p{N}]/u.test(text);
 }
 
 /**
@@ -156,9 +155,10 @@ export class TranslationSession {
 			import('@elevenlabs/client'),
 			transcriptionToken()
 		]);
-		// No pinned languageCode: Scribe picks among exactly the session languages.
-		// vadThreshold is deliberately unset, because filterBackgroundAudio applies its own
-		// lower threshold only when none is given.
+		// Scribe detects each utterance's language across every language it knows, so speech in an
+		// unselected language is heard correctly and translated like any other. vadThreshold is
+		// deliberately unset, because filterBackgroundAudio applies its own lower threshold only
+		// when none is given.
 		const connection = Scribe.connect({
 			token,
 			modelId: 'scribe_v2_realtime',
@@ -166,8 +166,6 @@ export class TranslationSession {
 			vadSilenceThresholdSecs: VAD_SILENCE_SECONDS,
 			minSpeechDurationMs: MIN_SPEECH_MS,
 			filterBackgroundAudio: true,
-			secondaryLanguages: [...this.languages],
-			includeLanguageDetection: true,
 			keyterms: ['Dolmo'],
 			noVerbatim: true,
 			microphone: {
@@ -192,10 +190,6 @@ export class TranslationSession {
 			this.partial = '';
 			const text = data.text.trim();
 			if (isSpeechText(text)) this.#enqueue({ type: 'utterance', text });
-		});
-		// TEMPORARY debug: confirm which language Scribe detects. Remove once verified.
-		connection.on(RealtimeEvents.FINAL_TRANSCRIPT_WITH_TIMESTAMPS, (data) => {
-			console.debug('[scribe] detected language:', data.language_code, data.text);
 		});
 		connection.on(RealtimeEvents.ERROR, (error) => {
 			if (this.#connection !== connection) return;
@@ -249,18 +243,7 @@ export class TranslationSession {
 	}
 
 	#history(): TurnRecord[] {
-		return $state
-			.snapshot(this.turns)
-			.filter((turn): turn is TurnRecord & TurnMeta => turn.kind !== 'error')
-			.slice(-MAX_HISTORY_TURNS)
-			.map(({ id, kind, sourceLanguage, original, outputs, repeatTurnId }) => ({
-				id,
-				kind,
-				sourceLanguage,
-				original,
-				outputs,
-				repeatTurnId
-			}));
+		return buildHistory($state.snapshot(this.turns), MAX_HISTORY_TURNS);
 	}
 
 	async #handleUtterance(utterance: string): Promise<void> {
@@ -287,45 +270,56 @@ export class TranslationSession {
 			return;
 		}
 
-		const durationMs = Math.round(performance.now() - started);
+		const decidedAt = performance.now();
+		const durationMs = Math.round(decidedAt - started);
 		this.turns.push({ id, original: utterance, ...decision, durationMs, ...meta });
 		if (!this.#active) return;
 
+		const items = speechItemsFor(id, decision);
+		// Synthesis starts now, so it overlaps the wait for the speaker and any queued speech.
+		this.#player?.prefetch(items);
 		if (decision.kind === 'translate' || decision.kind === 'clarify') {
-			await this.#speak(
-				decision.outputs.map((output) => ({
-					key: audioKey(id, output.language),
-					text: output.text,
-					language: output.language
-				}))
-			);
+			await this.#speak(items, () => this.#recordSpeechTime(id, decidedAt));
 		} else if (decision.kind === 'repeat' && decision.repeatTurnId) {
 			await this.#handleReplay(decision.repeatTurnId, decision.sourceLanguage);
 		}
 	}
 
-	async #handleReplay(turnId: string, language: string): Promise<void> {
+	/** Stores how long the voice took to start, measured from the decision to the first audio. */
+	#recordSpeechTime(turnId: string, decidedAt: number): void {
 		const turn = this.turns.find((candidate) => candidate.id === turnId);
-		const output =
-			turn && turn.kind !== 'error'
-				? turn.outputs.find((candidate) => candidate.language === language)
-				: undefined;
+		if (turn && turn.kind !== 'error') turn.speechMs = Math.round(performance.now() - decidedAt);
+	}
+
+	async #handleReplay(turnId: string, language: string): Promise<void> {
+		const output = findOutput(this.turns, turnId, language);
 		if (!output) return;
 		await this.#speak([{ key: audioKey(turnId, language), text: output.text, language }]);
 	}
 
-	async #speak(items: SpeechItem[]): Promise<void> {
+	async #speak(items: SpeechItem[], onFirstAudio?: () => void): Promise<void> {
 		if (!this.#player || items.length === 0) return;
-		await this.#yieldToSpeaker();
+		// Let the speaker finish their sentence before Dolmo talks, but never wait forever.
+		await waitWhile(() => this.partial.length > 0, {
+			maxMs: MAX_YIELD_WAIT_MS,
+			pollMs: YIELD_POLL_MS
+		});
 		const connection = this.#connection;
 		this.status = 'speaking';
 		this.partial = '';
 		this.#muted = true;
 		this.#setMuted(connection, true);
+		let announced = false;
 		try {
 			await this.#player.play(
 				items,
-				(key) => (this.speakingKey = key),
+				(key) => {
+					this.speakingKey = key;
+					if (key !== null && !announced) {
+						announced = true;
+						onFirstAudio?.();
+					}
+				},
 				(item, error) =>
 					this.#onError(
 						errorMessage(error, `Could not play the ${languageName(item.language)} audio.`)
@@ -336,12 +330,6 @@ export class TranslationSession {
 			this.#muted = false;
 			this.#setMuted(connection, false);
 		}
-	}
-
-	/** Waits while the speaker is still mid-sentence, so Dolmo does not talk over them. */
-	async #yieldToSpeaker(): Promise<void> {
-		const deadline = Date.now() + MAX_YIELD_WAIT_MS;
-		while (this.partial && Date.now() < deadline) await wait(YIELD_POLL_MS);
 	}
 
 	#setMuted(connection: RealtimeConnection | null, muted: boolean): void {

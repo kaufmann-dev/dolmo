@@ -64,8 +64,10 @@ Speech to Text and Text to Speech access, and an OIDC client for sign-in (see
   it. Languages are locked while a conversation runs.
 - **Claude settings**: open **Claude settings** on the setup screen to pick Opus 5.5, Sonnet 5.5
   or Haiku 5.5, and an effort from `low` to `max`. Changes apply from the next turn, and every
-  turn shows how long Claude took, so you can compare settings. Lower effort and smaller models
-  answer faster.
+  turn shows how long Claude took and how long the voice took to start, so you can compare
+  settings. Lower effort and smaller models answer faster.
+- **Any language**: Dolmo detects each speaker's language itself. Someone can speak a language
+  that is not selected, and it is translated into every selected language.
 - **Taking turns**: Dolmo works like a walkie-talkie. A pause of about 1.5 seconds ends a turn.
   If someone is still talking when a translation is ready, Dolmo waits for them to finish
   (up to five seconds). The microphone is muted while Dolmo speaks, so it never translates
@@ -99,6 +101,8 @@ Where to look in the code:
 - `src/lib/server/turn-validation.ts`: the rules a decision must satisfy.
 - `src/lib/translation-session.svelte.ts`: the browser-side session (microphone, queue,
   playback).
+- `src/lib/session-logic.ts`: the pure session rules (history, speech items, waiting for the
+  speaker), with unit tests in `src/lib/session-logic.test.ts`.
 - `src/lib/translate.remote.ts` and `src/routes/api/speech/+server.ts`: the server endpoints.
 
 Opus 5.5 and Sonnet 5.5 requests use Anthropic's server-side refusal fallback. Haiku 5.5 has

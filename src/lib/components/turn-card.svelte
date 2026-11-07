@@ -6,11 +6,8 @@
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { languageName } from '#lib/languages.ts';
 	import { MODEL_LABELS } from '#lib/models.ts';
-	import {
-		audioKey,
-		type SessionTurn,
-		type TranslationSession
-	} from '#lib/translation-session.svelte.ts';
+	import { audioKey, findOutput } from '#lib/session-logic.ts';
+	import type { SessionTurn, TranslationSession } from '#lib/translation-session.svelte.ts';
 
 	let { turn, session }: { turn: SessionTurn; session: TranslationSession } = $props();
 
@@ -20,11 +17,7 @@
 	const rows = $derived.by((): Row[] => {
 		if (turn.kind === 'error' || turn.kind === 'ignore') return [];
 		if (turn.kind === 'repeat') {
-			const target = session.turns.find((candidate) => candidate.id === turn.repeatTurnId);
-			const output =
-				target && target.kind !== 'error'
-					? target.outputs.find((candidate) => candidate.language === turn.sourceLanguage)
-					: undefined;
+			const output = findOutput(session.turns, turn.repeatTurnId ?? '', turn.sourceLanguage);
 			return output && turn.repeatTurnId
 				? [{ turnId: turn.repeatTurnId, language: output.language, text: output.text }]
 				: [];
@@ -63,7 +56,9 @@
 				<Badge variant="secondary">Question for Dolmo</Badge>
 			{/if}
 			<span class="ml-auto tabular-nums">
-				{formatSeconds(turn.durationMs)} · {MODEL_LABELS[turn.model]}, {turn.effort}
+				{formatSeconds(turn.durationMs)}{turn.speechMs === undefined
+					? ''
+					: ` · voice ${formatSeconds(turn.speechMs)}`} · {MODEL_LABELS[turn.model]}, {turn.effort}
 			</span>
 		</header>
 

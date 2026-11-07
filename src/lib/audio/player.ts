@@ -43,6 +43,11 @@ export class SpeechPlayer {
 		return buffer;
 	}
 
+	/** Starts synthesis for items that will be played soon, so playback can begin without waiting. */
+	prefetch(items: SpeechItem[]): void {
+		for (const item of items) this.#load(item).catch(() => {});
+	}
+
 	/**
 	 * Fetches every item in parallel and plays them one after another. Resolves when playback
 	 * finishes or `stop()` is called. Items that fail to load are reported and skipped.
