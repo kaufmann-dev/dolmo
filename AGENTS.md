@@ -203,7 +203,7 @@ Avoid these legacy Svelte features in new or refactored code:
   {@render children()}
   ```
 - **Visual styling**: Use the stock shadcn-svelte components and generated theme in `src/routes/layout.css`. Preserve their default shadows, animations, and keyboard focus styling. Use theme tokens and component variants for consistent styling.
-- **Accent**: `--primary`, `--primary-foreground` and `--ring` carry one Dolmo accent for both light and dark mode (`oklch(0.65 0.14 200)`, a teal), with a near-black foreground for AA contrast. Do not use `text-primary` for body text in light mode. `src/lib/components/logo.svelte` and `src/lib/assets/favicon.svg` hold the logo.
+- **Accent**: `--primary`, `--primary-foreground` and `--ring` carry one Dolmo accent for both light and dark mode (`oklch(0.6 0.18 120)`, from the logo's olive-to-green gradient), with a near-black foreground for AA contrast. Do not use `text-primary` for body text in light mode. `src/lib/components/logo.svelte` and `src/lib/assets/favicon.svg` hold the logo.
 - ESLint checks `src/lib/components/ui`, including customized components. Keep exceptions limited to the stock Button link forwarding and ChartTooltip callback parameter; do not ignore the directory or disable unrelated rules.
 
 ## Backend and Services
