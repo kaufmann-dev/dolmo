@@ -13,5 +13,5 @@ export const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'] as const;
 
 export type Effort = (typeof EFFORTS)[number];
 
-export const DEFAULT_MODEL: ModelId = 'claude-opus-5-5';
+export const DEFAULT_MODEL: ModelId = 'claude-sonnet-5-5';
 export const DEFAULT_EFFORT: Effort = 'low';
