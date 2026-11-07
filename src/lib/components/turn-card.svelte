@@ -56,9 +56,14 @@
 				<Badge variant="secondary">Question for Dolmo</Badge>
 			{/if}
 			<span class="ml-auto tabular-nums">
-				{formatSeconds(turn.durationMs)}{turn.speechMs === undefined
-					? ''
-					: ` · voice ${formatSeconds(turn.speechMs)}`} · {MODEL_LABELS[turn.model]}, {turn.effort}
+				{[
+					turn.transcribeMs === undefined ? null : `hear ${formatSeconds(turn.transcribeMs)}`,
+					`Claude ${formatSeconds(turn.durationMs)}`,
+					turn.speechMs === undefined ? null : `voice ${formatSeconds(turn.speechMs)}`,
+					`${MODEL_LABELS[turn.model]}, ${turn.effort}`
+				]
+					.filter((part) => part !== null)
+					.join(' · ')}
 			</span>
 		</header>
 

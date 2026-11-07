@@ -198,4 +198,39 @@ describe('validateDecision', () => {
 		const result = validateDecision(decision({ kind: 'ignore', sourceLanguage: 'German' }), input);
 		expect(result.ok).toBe(false);
 	});
+
+	describe('push to listen', () => {
+		const pushed: DecideTurnInput = { ...input, pushToListen: true };
+
+		it('accepts translations and ignored segments', () => {
+			const translation = validateDecision(
+				decision({
+					outputs: [
+						{ language: 'tr', text: 'Merhaba' },
+						{ language: 'uk', text: 'Привіт' }
+					]
+				}),
+				pushed
+			);
+			expect(translation.ok).toBe(true);
+			expect(validateDecision(decision({ kind: 'ignore' }), pushed).ok).toBe(true);
+		});
+
+		it('rejects repeat and clarify, which would answer Dolmo instead of translating', () => {
+			const repeat = validateDecision(
+				decision({ kind: 'repeat', sourceLanguage: 'uk', repeatTurnId: 't1' }),
+				pushed
+			);
+			const clarify = validateDecision(
+				decision({
+					kind: 'clarify',
+					sourceLanguage: 'uk',
+					outputs: [{ language: 'uk', text: 'Він запитав про ціну.' }]
+				}),
+				pushed
+			);
+			expect(repeat.ok).toBe(false);
+			expect(clarify.ok).toBe(false);
+		});
+	});
 });

@@ -68,7 +68,14 @@ Speech to Text and Text to Speech access, and an OIDC client for sign-in (see
   settings. Lower effort and smaller models answer faster.
 - **Any language**: Dolmo detects each speaker's language itself. Someone can speak a language
   that is not selected, and it is translated into every selected language.
-- **Taking turns**: Dolmo works like a walkie-talkie. A pause of about 1.5 seconds ends a turn.
+- **Two modes**: **Conversation** listens all the time and translates whatever people say.
+  **Push to listen** stays quiet until you hold the button, then translates what was said while
+  you held it. Use it in a car: two friends talk German, and when the driver needs something
+  translated into Russian, they hold the button and say it. The browser records the clip, and
+  Dolmo detects which language was spoken and translates it into the other one. The button is
+  disabled while Dolmo translates or speaks. Keep the phone's microphone indicator in view; the
+  microphone stays open during a push-to-listen session so a press starts at once.
+- **Taking turns** (conversation mode): Dolmo works like a walkie-talkie. A pause of about 1.5 seconds ends a turn.
   If someone is still talking when a translation is ready, Dolmo waits for them to finish
   (up to five seconds). The microphone is muted while Dolmo speaks, so it never translates
   itself. **Skip** cuts the current playback short. **Stop** ends listening and returns to the
@@ -92,6 +99,9 @@ Each turn passes through three services:
    Claude, which returns a structured decision: `translate` (into every other language),
    `repeat` (replay an earlier turn), `clarify` (answer the asker) or `ignore`. The server
    validates the decision before the browser sees it.
+   In push-to-listen mode the browser records a clip while the button is held and sends it to
+   `/api/transcribe`, which transcribes it with ElevenLabs Scribe v2 (batch, language detected).
+   Claude then always translates that clip, never answers it.
 3. **Speaking**: the server synthesizes each output with ElevenLabs Eleven v4 Turbo, and the browser
    plays them one after another and keeps the audio so repeats replay exactly what was said.
 
@@ -101,6 +111,7 @@ Where to look in the code:
 - `src/lib/server/turn-validation.ts`: the rules a decision must satisfy.
 - `src/lib/translation-session.svelte.ts`: the browser-side session (microphone, queue,
   playback).
+- `src/lib/audio/clip-recorder.ts`: push-to-listen recording. `src/routes/api/transcribe/+server.ts`: batch transcription.
 - `src/lib/session-logic.ts`: the pure session rules (history, speech items, waiting for the
   speaker), with unit tests in `src/lib/session-logic.test.ts`.
 - `src/lib/translate.remote.ts` and `src/routes/api/speech/+server.ts`: the server endpoints.

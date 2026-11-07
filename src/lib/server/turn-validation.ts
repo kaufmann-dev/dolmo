@@ -18,6 +18,10 @@ export function validateDecision(decision: TurnDecision, input: DecideTurnInput)
 		text: output.text.trim()
 	}));
 
+	if (input.pushToListen && (decision.kind === 'repeat' || decision.kind === 'clarify')) {
+		return { ok: false, reason: 'push to listen only translates' };
+	}
+
 	switch (decision.kind) {
 		case 'translate': {
 			const expected = input.languages.filter((language) => language !== sourceLanguage);

@@ -49,7 +49,9 @@ export const DecideTurnInput = z.object({
 	model: z.enum(MODEL_IDS),
 	effort: z.enum(EFFORTS),
 	utterance: z.string().trim().min(1).max(MAX_UTTERANCE_LENGTH),
-	history: z.array(TurnRecord).max(MAX_HISTORY_TURNS)
+	history: z.array(TurnRecord).max(MAX_HISTORY_TURNS),
+	/** The speaker held a button for this segment: it is always translated, never answered. */
+	pushToListen: z.boolean().optional()
 });
 
 export type DecideTurnInput = z.infer<typeof DecideTurnInput>;

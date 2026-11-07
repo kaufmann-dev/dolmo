@@ -4,6 +4,7 @@
 	import SquareIcon from '@lucide/svelte/icons/square';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import * as Empty from '#lib/components/ui/empty/index.js';
+	import ListenButton from '#lib/components/listen-button.svelte';
 	import ListeningOrb from '#lib/components/listening-orb.svelte';
 	import TurnCard from '#lib/components/turn-card.svelte';
 	import type { SessionStatus, TranslationSession } from '#lib/translation-session.svelte.ts';
@@ -14,9 +15,12 @@
 		idle: 'Stopped',
 		starting: 'Starting',
 		listening: 'Listening',
+		recording: 'Recording',
 		thinking: 'Thinking',
 		speaking: 'Speaking'
 	};
+
+	const pushToListen = $derived(session.mode === 'push-to-listen');
 
 	function scrollIntoView(node: HTMLElement) {
 		node.scrollIntoView({ block: 'nearest' });
@@ -32,8 +36,13 @@
 						<Empty.Media variant="icon"><MicIcon /></Empty.Media>
 						<Empty.Title>Start talking</Empty.Title>
 						<Empty.Description class="text-pretty">
-							Dolmo waits for a pause, then speaks the translation in every other language. To hear
-							something again, ask “Dolmo, what did he say?” in your language.
+							{#if pushToListen}
+								Hold the button, say something, and release. Dolmo translates it into the other
+								languages.
+							{:else}
+								Dolmo waits for a pause, then speaks the translation in every other language. To
+								hear something again, ask “Dolmo, what did he say?” in your language.
+							{/if}
 						</Empty.Description>
 					</Empty.Header>
 				</Empty.Root>
@@ -53,7 +62,7 @@
 		class="shrink-0 border-t bg-background/90 px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur"
 	>
 		<div class="mx-auto flex w-full max-w-2xl flex-col gap-3">
-			{#if session.partial}
+			{#if session.partial && !pushToListen}
 				<p
 					class="line-clamp-3 rounded-2xl bg-muted px-4 py-2.5 text-sm text-pretty text-muted-foreground italic"
 				>
@@ -69,10 +78,16 @@
 						</Button>
 					{/if}
 				</div>
-				<div class="flex flex-col items-center gap-1.5">
-					<ListeningOrb status={session.status} />
-					<p class="text-sm font-medium" aria-live="polite">{statusLabels[session.status]}</p>
-				</div>
+				{#if pushToListen}
+					<div class="flex justify-center">
+						<ListenButton {session} />
+					</div>
+				{:else}
+					<div class="flex flex-col items-center gap-1.5">
+						<ListeningOrb status={session.status} />
+						<p class="text-sm font-medium" aria-live="polite">{statusLabels[session.status]}</p>
+					</div>
+				{/if}
 				<div class="justify-self-end">
 					<Button variant="secondary" class="h-11 rounded-full px-4" onclick={() => session.stop()}>
 						<SquareIcon />

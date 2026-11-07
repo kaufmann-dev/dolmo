@@ -10,6 +10,9 @@ export const VOICE_ID = 'JBFqnCBsd6RMkjVDRZzb';
 /** Multilingual TTS model; its languages must include every entry of `SUPPORTED_LANGUAGES`. */
 export const TTS_MODEL = 'eleven_v4_turbo';
 
+/** Batch transcription model for push-to-listen clips (the live model is set in the browser). */
+export const TRANSCRIBE_MODEL = 'scribe_v2';
+
 /** Logs an ElevenLabs failure and rejects the request with a 502 the browser can show. */
 export function elevenLabsFailure(cause: unknown, action: string): never {
 	if (cause instanceof ElevenLabsError) {

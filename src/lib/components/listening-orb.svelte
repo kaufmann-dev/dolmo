@@ -9,13 +9,16 @@
 </script>
 
 <div class="relative grid size-20 place-items-center" aria-hidden="true">
-	{#if status === 'listening'}
+	{#if status === 'listening' || status === 'recording'}
 		<span
 			class="absolute inset-0 rounded-full bg-primary/30 motion-safe:animate-ping motion-reduce:hidden"
 		></span>
 	{/if}
 	<span
-		class="relative grid size-16 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/25 transition-colors"
+		class={[
+			'relative grid size-16 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/25 transition-transform motion-reduce:transition-none',
+			status === 'recording' && 'scale-110 shadow-primary/50'
+		]}
 	>
 		{#if status === 'speaking'}
 			<span class="flex h-6 items-end gap-1">

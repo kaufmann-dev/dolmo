@@ -1,5 +1,7 @@
 import type { RealtimeConnection } from '@elevenlabs/client';
+import { ClipRecorder } from '#lib/audio/clip-recorder.ts';
 import { SpeechPlayer, type SpeechItem } from '#lib/audio/player.ts';
+import { transcribeClip } from '#lib/audio/transcribe.ts';
 import { languageName, type LanguageCode } from '#lib/languages.ts';
 import { DEFAULT_EFFORT, DEFAULT_MODEL, type Effort, type ModelId } from '#lib/models.ts';
 import {
@@ -29,16 +31,24 @@ const YIELD_POLL_MS = 100;
 /** A connection that drops sooner than this after opening is not reopened automatically. */
 const MIN_RECONNECT_INTERVAL_MS = 10_000;
 
-export type SessionStatus = 'idle' | 'starting' | 'listening' | 'thinking' | 'speaking';
+export type SessionStatus =
+	'idle' | 'starting' | 'listening' | 'recording' | 'thinking' | 'speaking';
+
+/**
+ * `conversation` listens all the time and translates whatever people say. `push-to-listen`
+ * stays quiet until a button is held, then translates what was said during the press.
+ */
+export type SessionMode = 'conversation' | 'push-to-listen';
 
 type TurnMeta = { durationMs: number; model: ModelId; effort: Effort };
 
 export type SessionTurn =
-	| (TurnRecord & TurnMeta & { speechMs?: number })
+	| (TurnRecord & TurnMeta & { speechMs?: number; transcribeMs?: number })
 	| ({ id: string; kind: 'error'; original: string; message: string } & TurnMeta);
 
 type Job =
-	{ type: 'utterance'; text: string } | { type: 'replay'; turnId: string; language: string };
+	| { type: 'utterance'; text: string; transcribeMs?: number }
+	| { type: 'replay'; turnId: string; language: string };
 
 function errorMessage(error: unknown, fallback: string): string {
 	if (error && typeof error === 'object') {
@@ -55,9 +65,10 @@ function wait(ms: number): Promise<void> {
 }
 
 /**
- * One translation session on a shared device: listens through Scribe, asks Claude what each
- * utterance is, speaks the result, and keeps the conversation log. Half-duplex: the
- * microphone is muted while Dolmo speaks, so Dolmo never transcribes itself.
+ * One translation session on a shared device: listens (continuously in conversation mode, while
+ * a button is held in push-to-listen mode), asks Claude what each utterance is, speaks the
+ * result, and keeps the conversation log. Half-duplex: the microphone is muted while Dolmo
+ * speaks, so Dolmo never transcribes itself.
  */
 export class TranslationSession {
 	status = $state<SessionStatus>('idle');
@@ -66,6 +77,7 @@ export class TranslationSession {
 	languages = $state<LanguageCode[]>([]);
 	model = $state<ModelId>(DEFAULT_MODEL);
 	effort = $state<Effort>(DEFAULT_EFFORT);
+	mode = $state<SessionMode>('conversation');
 	/** `audioKey` of the output being spoken right now. */
 	speakingKey = $state<string | null>(null);
 	/** Why the last start attempt failed, shown next to the Start button. */
@@ -74,6 +86,9 @@ export class TranslationSession {
 	#onError: (message: string) => void;
 	#player: SpeechPlayer | null = null;
 	#connection: RealtimeConnection | null = null;
+	#recorder: ClipRecorder | null = null;
+	/** Changes whenever a press ends or the session stops, so a stale transcription is dropped. */
+	#listenToken = 0;
 	#connectedAt = 0;
 	#active = false;
 	/** True from the start of playback until the mic tail has passed; transcripts are ignored. */
@@ -106,6 +121,11 @@ export class TranslationSession {
 		this.#muted = false;
 		await this.#player.resume();
 
+		if (this.mode === 'push-to-listen') {
+			await this.#startPushToListen();
+			return;
+		}
+
 		try {
 			// Ask for the microphone first so a denied permission gets a clear message.
 			const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -126,6 +146,18 @@ export class TranslationSession {
 		}
 	}
 
+	async #startPushToListen(): Promise<void> {
+		try {
+			this.#recorder = await ClipRecorder.open();
+		} catch {
+			this.status = 'idle';
+			this.startError = 'Dolmo needs microphone access. Allow it in your browser and try again.';
+			return;
+		}
+		this.#active = true;
+		this.status = 'listening';
+	}
+
 	/** Stops listening. The conversation stays on screen and can still be replayed. */
 	stop(): void {
 		this.#active = false;
@@ -134,9 +166,58 @@ export class TranslationSession {
 		const connection = this.#connection;
 		this.#connection = null;
 		connection?.close();
+		this.#recorder?.close();
+		this.#recorder = null;
+		this.#listenToken++;
 		this.partial = '';
 		this.#muted = false;
 		if (!this.#draining) this.status = 'idle';
+	}
+
+	/** Push to listen: starts recording while the button is held. */
+	beginListening(): void {
+		if (this.mode !== 'push-to-listen' || this.status !== 'listening' || !this.#recorder) return;
+		this.#recorder.onLimit = () => void this.endListening();
+		this.#recorder.start();
+		this.status = 'recording';
+	}
+
+	/** Push to listen: ends the recording, transcribes it and queues the translation. */
+	async endListening(): Promise<void> {
+		const recorder = this.#recorder;
+		if (this.mode !== 'push-to-listen' || this.status !== 'recording' || !recorder) return;
+		const token = ++this.#listenToken;
+		this.status = 'thinking';
+		const releasedAt = performance.now();
+		const clip = await recorder.stop();
+		if (token !== this.#listenToken) return;
+		if (!clip) {
+			this.status = 'listening';
+			this.#onError('Hold the button while you speak.');
+			return;
+		}
+
+		let text: string;
+		try {
+			text = (await transcribeClip(clip)).trim();
+		} catch (error) {
+			if (token === this.#listenToken) {
+				this.status = 'listening';
+				this.#onError(errorMessage(error, 'Could not transcribe that. Please try again.'));
+			}
+			return;
+		}
+		if (token !== this.#listenToken) return;
+		if (!isSpeechText(text)) {
+			this.status = 'listening';
+			this.#onError("Didn't catch that. Hold the button and try again.");
+			return;
+		}
+		this.#enqueue({
+			type: 'utterance',
+			text,
+			transcribeMs: Math.round(performance.now() - releasedAt)
+		});
 	}
 
 	/** Skips whatever Dolmo is saying right now. */
@@ -233,7 +314,7 @@ export class TranslationSession {
 		try {
 			let job: Job | undefined;
 			while ((job = this.#queue.shift())) {
-				if (job.type === 'utterance') await this.#handleUtterance(job.text);
+				if (job.type === 'utterance') await this.#handleUtterance(job.text, job.transcribeMs);
 				else await this.#handleReplay(job.turnId, job.language);
 			}
 		} finally {
@@ -246,7 +327,7 @@ export class TranslationSession {
 		return buildHistory($state.snapshot(this.turns), MAX_HISTORY_TURNS);
 	}
 
-	async #handleUtterance(utterance: string): Promise<void> {
+	async #handleUtterance(utterance: string, transcribeMs?: number): Promise<void> {
 		this.status = 'thinking';
 		const id = `t${++this.#turnCount}`;
 		const meta = { model: this.model, effort: this.effort };
@@ -258,7 +339,8 @@ export class TranslationSession {
 				languages: [...this.languages],
 				...meta,
 				utterance,
-				history: this.#history()
+				history: this.#history(),
+				pushToListen: this.mode === 'push-to-listen'
 			});
 			if (!result.ok) throw new Error(result.message);
 			decision = result.decision;
@@ -272,7 +354,7 @@ export class TranslationSession {
 
 		const decidedAt = performance.now();
 		const durationMs = Math.round(decidedAt - started);
-		this.turns.push({ id, original: utterance, ...decision, durationMs, ...meta });
+		this.turns.push({ id, original: utterance, ...decision, durationMs, transcribeMs, ...meta });
 		if (!this.#active) return;
 
 		const items = speechItemsFor(id, decision);

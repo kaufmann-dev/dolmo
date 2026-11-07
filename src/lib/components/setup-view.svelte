@@ -1,5 +1,6 @@
 <script lang="ts">
 	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
+	import HandIcon from '@lucide/svelte/icons/hand';
 	import MicIcon from '@lucide/svelte/icons/mic';
 	import * as Alert from '#lib/components/ui/alert/index.js';
 	import { Button } from '#lib/components/ui/button/index.js';
@@ -7,13 +8,18 @@
 	import { Label } from '#lib/components/ui/label/index.js';
 	import * as NativeSelect from '#lib/components/ui/native-select/index.js';
 	import LanguageGrid from '#lib/components/language-grid.svelte';
+	import * as ToggleGroup from '#lib/components/ui/toggle-group/index.js';
 	import { languageName } from '#lib/languages.ts';
 	import { EFFORTS, MODEL_IDS, MODEL_LABELS } from '#lib/models.ts';
-	import type { TranslationSession } from '#lib/translation-session.svelte.ts';
+	import type { SessionMode, TranslationSession } from '#lib/translation-session.svelte.ts';
 
 	let { session }: { session: TranslationSession } = $props();
 
 	let settingsOpen = $state(false);
+
+	function isMode(value: string): value is SessionMode {
+		return value === 'conversation' || value === 'push-to-listen';
+	}
 	const ready = $derived(session.languages.length >= 2);
 	const summary = $derived(session.languages.map((code) => languageName(code)).join(', '));
 </script>
@@ -25,6 +31,33 @@
 				<h1 class="text-2xl font-semibold tracking-tight text-balance">Who is at the table?</h1>
 				<p class="text-pretty text-muted-foreground">
 					Add every language spoken here. Dolmo says each translation out loud in all the others.
+				</p>
+			</div>
+
+			<div class="flex flex-col gap-3">
+				<h2 class="text-sm font-medium text-muted-foreground">How people talk</h2>
+				<ToggleGroup.Root
+					type="single"
+					variant="outline"
+					class="w-full"
+					value={session.mode}
+					onValueChange={(value) => {
+						if (isMode(value)) session.mode = value;
+					}}
+				>
+					<ToggleGroup.Item value="conversation" class="flex-1 gap-2">
+						<MicIcon class="size-4" />
+						Conversation
+					</ToggleGroup.Item>
+					<ToggleGroup.Item value="push-to-listen" class="flex-1 gap-2">
+						<HandIcon class="size-4" />
+						Push to listen
+					</ToggleGroup.Item>
+				</ToggleGroup.Root>
+				<p class="text-sm text-muted-foreground">
+					{session.mode === 'push-to-listen'
+						? 'Dolmo stays quiet until you hold the button, then translates what is said while you hold it.'
+						: 'Dolmo listens all the time and translates everyone.'}
 				</p>
 			</div>
 

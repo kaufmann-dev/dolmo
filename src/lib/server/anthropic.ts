@@ -31,6 +31,8 @@ sourceLanguage is the ISO 639-1 code of the language the utterance is spoken in;
 
 Outputs are spoken, so write plain sentences without markdown, lists, emoji or stage directions, and write numbers, units and abbreviations the way a speaker would say them in that language.`;
 
+const PUSH_TO_LISTEN_RULES = `This segment was sent in push-to-listen mode: the speaker deliberately held a button so that what they said is translated for the other people. Always answer with "translate", even when the segment asks about another participant or about what was said, because the speaker wants it passed on. Use "ignore" only when the segment is empty or clearly noise. Never use "repeat" or "clarify" in this mode.`;
+
 function escapeXml(text: string): string {
 	return text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 }
@@ -62,7 +64,7 @@ export async function decideTurn(input: DecideTurnInput): Promise<DecideTurnResu
 		response = await client.beta.messages.parse({
 			model: input.model,
 			max_tokens: 16000,
-			system: SYSTEM_PROMPT,
+			system: input.pushToListen ? `${SYSTEM_PROMPT}\n\n${PUSH_TO_LISTEN_RULES}` : SYSTEM_PROMPT,
 			messages: [{ role: 'user', content: buildUserMessage(input) }],
 			output_config: { effort: input.effort, format: betaZodOutputFormat(TurnDecision) },
 			...fallback
