@@ -1,27 +1,21 @@
 <script lang="ts">
 	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
 	import MicIcon from '@lucide/svelte/icons/mic';
-	import PlusIcon from '@lucide/svelte/icons/plus';
-	import XIcon from '@lucide/svelte/icons/x';
 	import * as Alert from '#lib/components/ui/alert/index.js';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import * as Collapsible from '#lib/components/ui/collapsible/index.js';
 	import { Label } from '#lib/components/ui/label/index.js';
 	import * as NativeSelect from '#lib/components/ui/native-select/index.js';
-	import LanguagePicker from '#lib/components/language-picker.svelte';
-	import { languageName, type LanguageCode } from '#lib/languages.ts';
+	import LanguageGrid from '#lib/components/language-grid.svelte';
+	import { languageName } from '#lib/languages.ts';
 	import { EFFORTS, MODEL_IDS, MODEL_LABELS } from '#lib/models.ts';
 	import type { TranslationSession } from '#lib/translation-session.svelte.ts';
 
 	let { session }: { session: TranslationSession } = $props();
 
-	let pickerOpen = $state(false);
 	let settingsOpen = $state(false);
 	const ready = $derived(session.languages.length >= 2);
-
-	function remove(code: LanguageCode) {
-		session.languages = session.languages.filter((language) => language !== code);
-	}
+	const summary = $derived(session.languages.map((code) => languageName(code)).join(', '));
 </script>
 
 <section class="flex min-h-0 flex-1 flex-col" aria-label="Set up the conversation">
@@ -35,38 +29,16 @@
 			</div>
 
 			<div class="flex flex-col gap-3">
-				<h2 class="text-sm font-medium text-muted-foreground">Languages</h2>
-				<ul class="flex flex-wrap gap-2" aria-label="Selected languages">
-					{#each session.languages as code (code)}
-						<li
-							class="flex h-11 items-center gap-1 rounded-full border bg-card pr-1 pl-4 text-sm font-medium shadow-sm"
-						>
-							{languageName(code)}
-							<Button
-								variant="ghost"
-								size="icon"
-								class="rounded-full"
-								aria-label={`Remove ${languageName(code)}`}
-								onclick={() => remove(code)}
-							>
-								<XIcon />
-							</Button>
-						</li>
-					{/each}
-					<li>
-						<Button
-							variant="outline"
-							class="h-11 rounded-full border-dashed px-4"
-							onclick={() => (pickerOpen = true)}
-						>
-							<PlusIcon />
-							Add language
-						</Button>
-					</li>
-				</ul>
-				{#if !ready}
-					<p class="text-sm text-muted-foreground">Add at least two languages to start.</p>
-				{/if}
+				<div class="flex items-baseline justify-between gap-3">
+					<h2 class="text-sm font-medium text-muted-foreground">Languages</h2>
+					<p class="text-sm text-muted-foreground tabular-nums">
+						{session.languages.length} selected
+					</p>
+				</div>
+				<LanguageGrid bind:selected={session.languages} />
+				<p class="text-xs text-muted-foreground">
+					Numbers show the order translations are spoken in. Tap a selected language to remove it.
+				</p>
 			</div>
 
 			<Collapsible.Root bind:open={settingsOpen} class="flex flex-col">
@@ -110,6 +82,9 @@
 		class="shrink-0 border-t bg-background/90 px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur"
 	>
 		<div class="mx-auto flex w-full max-w-2xl flex-col gap-3">
+			<p class="truncate text-center text-sm text-muted-foreground">
+				{ready ? summary : 'Pick at least two languages to start.'}
+			</p>
 			{#if session.startError}
 				<Alert.Root variant="destructive">
 					<Alert.Title>Dolmo could not start</Alert.Title>
@@ -128,5 +103,3 @@
 		</div>
 	</div>
 </section>
-
-<LanguagePicker bind:open={pickerOpen} bind:selected={session.languages} />

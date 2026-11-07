@@ -75,6 +75,7 @@
 		"@elevenlabs/elevenlabs-js": "^2.76.0",
 		"@lucide/svelte": "^1.69.0",
 		"better-svelte-email": "^2.3.0",
+		"flag-icons": "7.6.0",
 		"mode-watcher": "^1.1.0",
 		"resend": "^6.37.0",
 		"zod": "^4.6.7"

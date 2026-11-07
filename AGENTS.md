@@ -36,6 +36,7 @@ pnpm drizzle-kit migrate     # Execute migrations
 - **UI**: Tailwind CSS and `shadcn-svelte`
 - **Icons**: `@lucide/svelte`
 - **Theme**: `mode-watcher`
+- **Flags**: `flag-icons` SVGs, each imported individually in `src/lib/flags.ts` so only the session languages are bundled
 - **Database**: Drizzle with PostgreSQL
 - **Auth**: Better Auth with the `genericOAuth` OIDC plugin
 - **AI and speech**: `@anthropic-ai/sdk` (Claude), `@elevenlabs/elevenlabs-js` (server), `@elevenlabs/client` (browser Scribe realtime)

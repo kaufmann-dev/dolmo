@@ -89,4 +89,10 @@ export class SpeechPlayer {
 		this.#cancelled = true;
 		this.#source?.stop();
 	}
+
+	/** Stops playback and forgets cached audio, so a new conversation never replays an old one. */
+	clear(): void {
+		this.stop();
+		this.#buffers.clear();
+	}
 }

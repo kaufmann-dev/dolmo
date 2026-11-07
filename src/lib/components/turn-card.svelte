@@ -2,6 +2,7 @@
 	import PlayIcon from '@lucide/svelte/icons/play';
 	import Volume2Icon from '@lucide/svelte/icons/volume-2';
 	import { Badge } from '#lib/components/ui/badge/index.js';
+	import LanguageFlag from '#lib/components/language-flag.svelte';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import { languageName } from '#lib/languages.ts';
 	import { MODEL_LABELS } from '#lib/models.ts';
@@ -52,7 +53,10 @@
 		class="flex flex-col gap-3 rounded-3xl bg-card p-4 shadow-sm ring-1 ring-foreground/5 sm:p-5"
 	>
 		<header class="flex min-w-0 flex-wrap items-center gap-2 text-xs text-muted-foreground">
-			<span class="font-semibold text-foreground">{languageName(turn.sourceLanguage)}</span>
+			<span class="flex items-center gap-1.5 font-semibold text-foreground">
+				<LanguageFlag code={turn.sourceLanguage} class="w-4" />
+				{languageName(turn.sourceLanguage)}
+			</span>
 			{#if turn.kind === 'repeat'}
 				<Badge variant="secondary">Repeat request</Badge>
 			{:else if turn.kind === 'clarify'}
@@ -79,6 +83,7 @@
 							<p
 								class="flex items-center gap-1.5 text-xs font-medium tracking-wide text-muted-foreground uppercase"
 							>
+								<LanguageFlag code={row.language} class="w-4" />
 								{#if speaking}<Volume2Icon
 										class="size-3.5 text-foreground"
 										aria-hidden="true"

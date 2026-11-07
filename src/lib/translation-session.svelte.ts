@@ -97,6 +97,14 @@ export class TranslationSession {
 		this.status = 'starting';
 		this.startError = null;
 		this.#player ??= new SpeechPlayer();
+		// Every Start is a new conversation: nothing from the previous one is kept.
+		this.#player.clear();
+		this.turns = [];
+		this.partial = '';
+		this.speakingKey = null;
+		this.#queue = [];
+		this.#turnCount = 0;
+		this.#muted = false;
 		await this.#player.resume();
 
 		try {

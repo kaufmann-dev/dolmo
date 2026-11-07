@@ -58,10 +58,10 @@ Speech to Text and Text to Speech access, and an OIDC client for sign-in (see
 
 ## Using Dolmo
 
-- **Languages**: on the setup screen, tap **Add language**, search or scroll, and pick every
-  language spoken at the table. They appear as chips in the order you chose them, and
-  translations are spoken in that order. Remove a chip with its ×. Languages are locked while a
-  conversation runs.
+- **Languages**: on the setup screen, tap the flag of every language spoken at the table. Each
+  tile shows the flag and a three-letter country code (such as UKR for Ukrainian). The number on
+  a selected tile is the order translations are spoken in. Tap a selected tile again to remove
+  it. Languages are locked while a conversation runs.
 - **Claude settings**: open **Claude settings** on the setup screen to pick Opus 5.5, Sonnet 5.5
   or Haiku 5.5, and an effort from `low` to `max`. Changes apply from the next turn, and every
   turn shows how long Claude took, so you can compare settings. Lower effort and smaller models
@@ -69,8 +69,8 @@ Speech to Text and Text to Speech access, and an OIDC client for sign-in (see
 - **Taking turns**: Dolmo works like a walkie-talkie. A pause of about 1.5 seconds ends a turn.
   If someone is still talking when a translation is ready, Dolmo waits for them to finish
   (up to five seconds). The microphone is muted while Dolmo speaks, so it never translates
-  itself. **Skip** cuts
-  the current playback short; **Stop** ends listening but keeps the conversation on screen.
+  itself. **Skip** cuts the current playback short. **Stop** ends listening and returns to the
+  setup screen. **Start conversation** always begins a new, empty conversation.
 - **Asking Dolmo**: "Dolmo, what did he say?" or "say that again" replays the earlier
   translation, only in your language. Questions such as "what does that word mean?" are
   answered briefly in your language only. Questions addressed to another person ("what did
