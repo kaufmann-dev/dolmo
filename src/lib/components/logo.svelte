@@ -16,8 +16,8 @@
 >
 	<defs>
 		<linearGradient id={gradientId} x1="3" y1="3" x2="29" y2="29" gradientUnits="userSpaceOnUse">
-			<stop class="[stop-color:#9f8d05] dark:[stop-color:#dec943]" />
-			<stop class="[stop-color:#3f7b04] dark:[stop-color:#74b24c]" offset="1" />
+			<stop class="[stop-color:#069fa6] dark:[stop-color:#0de2eb]" />
+			<stop class="[stop-color:#01729f] dark:[stop-color:#24abe8]" offset="1" />
 		</linearGradient>
 	</defs>
 	<path
