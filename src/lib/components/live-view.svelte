@@ -69,7 +69,7 @@
 					<span class="sr-only">Hearing:</span>{session.partial}
 				</p>
 			{/if}
-			<div class="grid grid-cols-3 items-center">
+			<div class="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
 				<div class="justify-self-start">
 					{#if session.status === 'speaking'}
 						<Button variant="outline" class="h-11 rounded-full px-4" onclick={() => session.skip()}>

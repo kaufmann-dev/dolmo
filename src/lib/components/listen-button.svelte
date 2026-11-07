@@ -53,5 +53,5 @@
 	>
 		<ListeningOrb status={session.status} />
 	</button>
-	<p class="text-sm font-medium" aria-live="polite">{label}</p>
+	<p class="text-center text-sm font-medium whitespace-nowrap" aria-live="polite">{label}</p>
 </div>
