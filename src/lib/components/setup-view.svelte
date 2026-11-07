@@ -8,18 +8,15 @@
 	import { Label } from '#lib/components/ui/label/index.js';
 	import * as NativeSelect from '#lib/components/ui/native-select/index.js';
 	import LanguageGrid from '#lib/components/language-grid.svelte';
-	import * as ToggleGroup from '#lib/components/ui/toggle-group/index.js';
+	import { Toggle } from '#lib/components/ui/toggle/index.js';
 	import { languageName } from '#lib/languages.ts';
 	import { EFFORTS, MODEL_IDS, MODEL_LABELS } from '#lib/models.ts';
-	import type { SessionMode, TranslationSession } from '#lib/translation-session.svelte.ts';
+	import type { TranslationSession } from '#lib/translation-session.svelte.ts';
 
 	let { session }: { session: TranslationSession } = $props();
 
 	let settingsOpen = $state(false);
 
-	function isMode(value: string): value is SessionMode {
-		return value === 'conversation' || value === 'push-to-listen';
-	}
 	const ready = $derived(session.languages.length >= 2);
 	const summary = $derived(session.languages.map((code) => languageName(code)).join(', '));
 </script>
@@ -36,24 +33,26 @@
 
 			<div class="flex flex-col gap-3">
 				<h2 class="text-sm font-medium text-muted-foreground">How people talk</h2>
-				<ToggleGroup.Root
-					type="single"
-					variant="outline"
-					class="w-full"
-					value={session.mode}
-					onValueChange={(value) => {
-						if (isMode(value)) session.mode = value;
-					}}
-				>
-					<ToggleGroup.Item value="conversation" class="flex-1 gap-2">
+				<div class="grid grid-cols-2 gap-2" role="group" aria-label="How people talk">
+					<Toggle
+						variant="outline"
+						pressed={session.mode === 'conversation'}
+						onPressedChange={() => (session.mode = 'conversation')}
+						class="h-11 gap-2 rounded-2xl aria-pressed:border-primary aria-pressed:bg-primary/15"
+					>
 						<MicIcon class="size-4" />
 						Conversation
-					</ToggleGroup.Item>
-					<ToggleGroup.Item value="push-to-listen" class="flex-1 gap-2">
+					</Toggle>
+					<Toggle
+						variant="outline"
+						pressed={session.mode === 'push-to-listen'}
+						onPressedChange={() => (session.mode = 'push-to-listen')}
+						class="h-11 gap-2 rounded-2xl aria-pressed:border-primary aria-pressed:bg-primary/15"
+					>
 						<HandIcon class="size-4" />
 						Push to listen
-					</ToggleGroup.Item>
-				</ToggleGroup.Root>
+					</Toggle>
+				</div>
 				<p class="text-sm text-muted-foreground">
 					{session.mode === 'push-to-listen'
 						? 'Dolmo stays quiet until you hold the button, then translates what is said while you hold it.'
