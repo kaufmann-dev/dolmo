@@ -12,9 +12,9 @@
 	--card-foreground: oklch(0.145 0 0);
 	--popover: oklch(1 0 0);
 	--popover-foreground: oklch(0.145 0 0);
-	/* Dolmo accent, one color for both modes, from the logo's olive-to-green gradient: near-black text on it is about 6:1 */
+	/* Dolmo accent, the blue of the logo gradient; text and icons on it are white in light mode, near-black in dark mode */
 	--primary: oklch(0.65 0.14 200);
-	--primary-foreground: oklch(0.145 0 0);
+	--primary-foreground: oklch(1 0 0);
 	--secondary: oklch(0.97 0 0);
 	--secondary-foreground: oklch(0.205 0 0);
 	--muted: oklch(0.97 0 0);
