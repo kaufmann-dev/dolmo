@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import LiveView from '#lib/components/live-view.svelte';
 	import SetupView from '#lib/components/setup-view.svelte';
@@ -10,8 +11,11 @@
 	let { data }: PageProps = $props();
 
 	const session = new TranslationSession((message) => toast.error(message));
-	const pins = new LanguagePins(data.pinnedLanguages, savePinnedLanguages, (message) =>
-		toast.error(message)
+	// Pins load once; after that the browser owns the list and saves every change.
+	const pins = new LanguagePins(
+		untrack(() => data.pinnedLanguages),
+		savePinnedLanguages,
+		(message) => toast.error(message)
 	);
 </script>
 

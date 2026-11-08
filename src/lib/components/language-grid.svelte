@@ -75,15 +75,15 @@
 					<span class="max-w-full truncate text-xs font-semibold tracking-wide">
 						{languageName(code)}
 					</span>
-					{#if pins.editing}
-						{#if isPinned}
-							<PinIcon class="absolute top-1.5 right-1.5 size-4 text-primary" fill="currentColor" />
-						{/if}
-					{:else if position > 0}
+					{#if pins.editing ? isPinned : position > 0}
 						<span
 							class="absolute top-1 right-1 grid size-5 place-items-center rounded-full bg-primary text-[0.7rem] font-semibold text-primary-foreground tabular-nums"
 						>
-							{position}
+							{#if pins.editing}
+								<PinIcon class="size-3" fill="currentColor" />
+							{:else}
+								{position}
+							{/if}
 						</span>
 					{/if}
 				</Toggle>
