@@ -7,7 +7,7 @@
 Dolmo is a live voice interpreter for people who don't share a language. Put one device on the
 table, pick the languages being spoken, and press Start. Whenever someone finishes speaking,
 Dolmo says the translation out loud in every other language, then listens again. It works with
-any number of people and languages; the 32 languages of ElevenLabs Eleven v4 Turbo are available.
+any number of people and languages; 89 languages are available.
 
 Dolmo also understands when a question is meant for it rather than for the others. "What did he
 say again?" replays the last translation in the asker's language instead of translating the
@@ -59,9 +59,11 @@ Speech to Text and Text to Speech access, and an OIDC client for sign-in (see
 ## Using Dolmo
 
 - **Languages**: on the setup screen, tap the flag of every language spoken at the table. Each
-  tile shows the flag and a three-letter country code (such as UKR for Ukrainian). The number on
-  a selected tile is the order translations are spoken in. Tap a selected tile again to remove
-  it. Languages are locked while a conversation runs.
+  tile shows the flag and the language name (such as Ukrainian). The most widely used languages
+  show first; **Load more…** shows the rest. Press the pin on a tile to keep that language at the
+  top of the list on this device. The number on a selected tile is the order translations are
+  spoken in. Tap a selected tile again to remove it. Languages are locked while a conversation
+  runs.
 - **Claude settings**: open **Claude settings** on the setup screen to pick Opus 5.5, Sonnet 5.5
   or Haiku 5.5, and an effort from `low` to `max`. Changes apply from the next turn, and every
   turn shows how long Claude took and how long the voice took to start, so you can compare

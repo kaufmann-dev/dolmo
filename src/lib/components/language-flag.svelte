@@ -4,12 +4,12 @@
 
 	let { code, class: className }: { code: string; class?: string } = $props();
 
-	const flag = $derived(languageFlag(code));
+	const src = $derived(languageFlag(code));
 </script>
 
-{#if flag}
+{#if src}
 	<img
-		src={flag.src}
+		{src}
 		alt=""
 		loading="lazy"
 		class={cn(

@@ -27,7 +27,7 @@ ignore: There is nothing meaningful to pass on: background noise, a cough, a lon
 
 To tell questions for Dolmo from questions for people: a question put to someone in the room in the second person ("what did you say about the price?") is part of the conversation, so translate it. A question about another participant in the third person ("what did he say?", "what is she talking about?"), or one that addresses Dolmo by name, is for Dolmo, so use repeat or clarify. Use the conversation to judge borderline cases.
 
-sourceLanguage is the ISO 639-1 code of the language the utterance is spoken in; it may be a language outside the session list. Output languages are ISO 639-1 codes. repeatTurnId is null unless kind is repeat.
+sourceLanguage is the code of the language the utterance is spoken in, ISO 639-1 or ISO 639-3 where a language has no ISO 639-1 code; it may be a language outside the session list. Output languages must use the codes given in the session languages list. repeatTurnId is null unless kind is repeat.
 
 Outputs are spoken, so write plain sentences without markdown, lists, emoji or stage directions, and write numbers, units and abbreviations the way a speaker would say them in that language.`;
 
