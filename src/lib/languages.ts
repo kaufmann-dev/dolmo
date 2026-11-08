@@ -102,10 +102,108 @@ export type LanguageCode = (typeof SUPPORTED_LANGUAGES)[number];
 /** Most languages one user can pin to the top of the language grid. */
 export const MAX_PINNED_LANGUAGES = 24;
 
+/**
+ * English name of each session language. Written out because the browser's `Intl.DisplayNames`
+ * data varies and returns the bare code for names it lacks. `satisfies` makes a missing or extra
+ * language a type error.
+ */
+const LANGUAGE_NAMES = {
+	en: 'English',
+	zh: 'Mandarin',
+	es: 'Spanish',
+	fr: 'French',
+	ar: 'Arabic',
+	ru: 'Russian',
+	pt: 'Portuguese',
+	de: 'German',
+	ja: 'Japanese',
+	hi: 'Hindi',
+	it: 'Italian',
+	ko: 'Korean',
+	tr: 'Turkish',
+	id: 'Indonesian',
+	vi: 'Vietnamese',
+	nl: 'Dutch',
+	pl: 'Polish',
+	uk: 'Ukrainian',
+	fa: 'Persian',
+	sw: 'Swahili',
+	bn: 'Bengali',
+	ur: 'Urdu',
+	th: 'Thai',
+	he: 'Hebrew',
+	el: 'Greek',
+	sv: 'Swedish',
+	af: 'Afrikaans',
+	ms: 'Malay',
+	fil: 'Filipino',
+	ta: 'Tamil',
+	ro: 'Romanian',
+	cs: 'Czech',
+	hu: 'Hungarian',
+	fi: 'Finnish',
+	da: 'Danish',
+	no: 'Norwegian',
+	yue: 'Cantonese',
+	ha: 'Hausa',
+	am: 'Amharic',
+	zu: 'Zulu',
+	te: 'Telugu',
+	mr: 'Marathi',
+	pa: 'Punjabi',
+	gu: 'Gujarati',
+	kn: 'Kannada',
+	ml: 'Malayalam',
+	ne: 'Nepali',
+	bg: 'Bulgarian',
+	hr: 'Croatian',
+	sr: 'Serbian',
+	sk: 'Slovak',
+	lt: 'Lithuanian',
+	lv: 'Latvian',
+	et: 'Estonian',
+	sl: 'Slovenian',
+	ka: 'Georgian',
+	hy: 'Armenian',
+	az: 'Azerbaijani',
+	kk: 'Kazakh',
+	uz: 'Uzbek',
+	mn: 'Mongolian',
+	is: 'Icelandic',
+	mk: 'Macedonian',
+	bs: 'Bosnian',
+	be: 'Belarusian',
+	ca: 'Catalan',
+	gl: 'Galician',
+	ast: 'Asturian',
+	oc: 'Occitan',
+	lb: 'Luxembourgish',
+	mt: 'Maltese',
+	cy: 'Welsh',
+	ps: 'Pashto',
+	sd: 'Sindhi',
+	or: 'Odia',
+	as: 'Assamese',
+	ceb: 'Cebuano',
+	jv: 'Javanese',
+	my: 'Burmese',
+	lo: 'Lao',
+	ky: 'Kyrgyz',
+	tg: 'Tajik',
+	mi: 'Māori',
+	ln: 'Lingala',
+	lg: 'Luganda',
+	sn: 'Shona',
+	wo: 'Wolof',
+	ff: 'Fula',
+	so: 'Somali'
+} satisfies Record<LanguageCode, string>;
+
 const displayNames = new Intl.DisplayNames(['en'], { type: 'language' });
 
+/** English name of a language code. Codes outside the session list fall back to the browser's data. */
 export function languageName(code: string): string {
-	return displayNames.of(code) ?? code;
+	return isSupportedLanguage(code) ? LANGUAGE_NAMES[code] : (displayNames.of(code) ?? code);
 }
 
 export function isSupportedLanguage(code: string): code is LanguageCode {
