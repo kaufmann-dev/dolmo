@@ -60,8 +60,8 @@ Speech to Text and Text to Speech access, and an OIDC client for sign-in (see
 
 - **Languages**: on the setup screen, tap the flag of every language spoken at the table. Each
   tile shows the flag and the language name (such as Ukrainian). The most widely used languages
-  show first; **Load more…** shows the rest. Press the pin on a tile to keep that language at the
-  top of the list on this device. The number on a selected tile is the order translations are
+  show first, 24 tiles in total including pinned ones; **Load more…** shows the rest. Press the pin
+  on a tile to keep that language at the top of the list on this device, up to 24 pinned. The number on a selected tile is the order translations are
   spoken in. Tap a selected tile again to remove it. Languages are locked while a conversation
   runs.
 - **Claude settings**: open **Claude settings** on the setup screen to pick Opus 5.5, Sonnet 5.5

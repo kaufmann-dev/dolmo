@@ -13,8 +13,9 @@
 
 	let { selected = $bindable([]) }: { selected?: LanguageCode[] } = $props();
 
-	/** Languages shown before "Load more…", the most important ones in SUPPORTED_LANGUAGES order. */
-	const INITIAL_LANGUAGES: readonly LanguageCode[] = SUPPORTED_LANGUAGES.slice(0, 24);
+	/** Tiles shown before "Load more…", pins and selections included. */
+	const INITIAL_COUNT = 24;
+	const MAX_PINNED = 24;
 	const PINS_KEY = 'dolmo.pinnedLanguages';
 
 	let pinned = $state<LanguageCode[]>([]);
@@ -24,9 +25,11 @@
 		try {
 			const stored: unknown = JSON.parse(localStorage.getItem(PINS_KEY) ?? '[]');
 			if (Array.isArray(stored)) {
-				pinned = stored.filter(
-					(code): code is LanguageCode => typeof code === 'string' && isSupportedLanguage(code)
-				);
+				pinned = stored
+					.filter(
+						(code): code is LanguageCode => typeof code === 'string' && isSupportedLanguage(code)
+					)
+					.slice(0, MAX_PINNED);
 			}
 		} catch {
 			// Storage is unavailable or holds something unreadable: start without pins.
@@ -39,23 +42,34 @@
 		...SUPPORTED_LANGUAGES.filter((code) => !pinned.includes(code))
 	]);
 
-	/** Pinned and selected languages always show, even before "Load more…" is pressed. */
-	const visible = $derived(
-		expanded
-			? ordered
-			: ordered.filter(
-					(code) =>
-						INITIAL_LANGUAGES.includes(code) || pinned.includes(code) || selected.includes(code)
-				)
-	);
+	/**
+	 * The default view: pins and selections first, then the most important remaining languages,
+	 * up to INITIAL_COUNT tiles in total. Pinning a language further down the list therefore pushes
+	 * the least important default language out of view.
+	 */
+	const initial = $derived.by(() => {
+		const keep: LanguageCode[] = [];
+		for (const code of [...pinned, ...selected]) {
+			if (!keep.includes(code)) keep.push(code);
+		}
+		for (const code of SUPPORTED_LANGUAGES) {
+			if (keep.length >= INITIAL_COUNT) break;
+			if (!keep.includes(code)) keep.push(code);
+		}
+		return keep;
+	});
+
+	const visible = $derived(expanded ? ordered : ordered.filter((code) => initial.includes(code)));
 
 	const hiddenCount = $derived(ordered.length - visible.length);
+	const pinLimitReached = $derived(pinned.length >= MAX_PINNED);
 
 	function toggle(code: LanguageCode, pressed: boolean) {
 		selected = pressed ? [...selected, code] : selected.filter((language) => language !== code);
 	}
 
 	function togglePin(code: LanguageCode) {
+		if (!pinned.includes(code) && pinLimitReached) return;
 		pinned = pinned.includes(code)
 			? pinned.filter((language) => language !== code)
 			: [...pinned, code];
@@ -96,16 +110,15 @@
 				<button
 					type="button"
 					class={[
-						'absolute top-1 left-1 grid size-6 place-items-center rounded-full ring-1 ring-foreground/10 transition-colors motion-reduce:transition-none',
-						isPinned
-							? 'bg-primary text-primary-foreground'
-							: 'bg-background/80 text-muted-foreground'
+						'absolute top-0.5 left-0.5 grid size-6 place-items-center rounded-full transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-40 motion-reduce:transition-none',
+						isPinned ? 'text-primary' : 'text-muted-foreground/70 hover:text-foreground'
 					]}
 					aria-label={`Pin ${languageName(code)}`}
 					aria-pressed={isPinned}
+					disabled={!isPinned && pinLimitReached}
 					onclick={() => togglePin(code)}
 				>
-					<PinIcon class="size-3" />
+					<PinIcon class="size-3.5" fill={isPinned ? 'currentColor' : 'none'} />
 				</button>
 			</li>
 		{/each}
