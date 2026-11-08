@@ -1,39 +1,35 @@
-import { isSupportedLanguage, type LanguageCode } from '#lib/languages.ts';
-
-const STORAGE_KEY = 'dolmo.pinnedLanguages';
+import { MAX_PINNED_LANGUAGES, type LanguageCode } from '#lib/languages.ts';
 
 /**
- * Languages pinned to the top of the language grid on this device, plus whether the grid is in
- * pin mode. The setup screen and the grid share one instance.
+ * Languages the user pinned to the top of the language grid, plus whether the grid is in pin
+ * mode. The setup screen and the grid share one instance. Changes show at once and are saved to
+ * the account in the background, one save after another, each sending the list as it is then.
  */
 export class LanguagePins {
-	static readonly MAX = 24;
-
 	codes = $state<LanguageCode[]>([]);
 	/** Pin mode: tapping a tile pins it instead of selecting it. */
 	editing = $state(false);
 
+	readonly #save: (codes: LanguageCode[]) => Promise<unknown>;
+	readonly #onError: (message: string) => void;
+	#saving: Promise<void> = Promise.resolve();
+
+	constructor(
+		initial: readonly LanguageCode[],
+		save: (codes: LanguageCode[]) => Promise<unknown>,
+		onError: (message: string) => void
+	) {
+		this.codes = initial.slice(0, MAX_PINNED_LANGUAGES);
+		this.#save = save;
+		this.#onError = onError;
+	}
+
 	get full(): boolean {
-		return this.codes.length >= LanguagePins.MAX;
+		return this.codes.length >= MAX_PINNED_LANGUAGES;
 	}
 
 	has(code: LanguageCode): boolean {
 		return this.codes.includes(code);
-	}
-
-	/** Reads the saved pins. Call once in the browser. */
-	load(): void {
-		try {
-			const stored: unknown = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]');
-			if (!Array.isArray(stored)) return;
-			this.codes = stored
-				.filter(
-					(code): code is LanguageCode => typeof code === 'string' && isSupportedLanguage(code)
-				)
-				.slice(0, LanguagePins.MAX);
-		} catch {
-			// Storage is unavailable or holds something unreadable: start without pins.
-		}
 	}
 
 	/** Pins an unpinned language, or unpins a pinned one. Pinning past the limit does nothing. */
@@ -45,10 +41,11 @@ export class LanguagePins {
 		} else {
 			return;
 		}
-		try {
-			localStorage.setItem(STORAGE_KEY, JSON.stringify(this.codes));
-		} catch {
-			// Storage is unavailable: the pin still applies for this visit.
-		}
+		this.#saving = this.#saving
+			.then(() => this.#save([...this.codes]))
+			.then(
+				() => undefined,
+				() => this.#onError('Could not save your pinned languages. Try again.')
+			);
 	}
 }

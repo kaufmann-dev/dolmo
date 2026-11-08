@@ -31,7 +31,7 @@ Speech to Text and Text to Speech access, and an OIDC client for sign-in (see
 2. Create `.env` from `.env.example` and fill in every value (see [Configuration](#configuration)).
    Generate `BETTER_AUTH_SECRET` with `openssl rand -base64 32`.
 
-3. Start PostgreSQL (it stores sign-in sessions) and apply the migrations:
+3. Start PostgreSQL (it stores sign-in sessions and pinned languages) and apply the migrations:
 
    ```bash
    podman run \
@@ -60,10 +60,10 @@ Speech to Text and Text to Speech access, and an OIDC client for sign-in (see
 
 - **Languages**: on the setup screen, tap the flag of every language spoken at the table. Each
   tile shows the flag and the language name (such as Ukrainian). The most widely used languages
-  show first, 24 tiles in total including pinned ones; **Load more…** shows the rest. To keep
-  languages at the top of the list on this device, press **Pin**, tap up to 24 languages and press
-  **Done**. The number on a selected tile is the order translations are spoken in. Tap a selected
-  tile again to remove it. Languages are locked while a conversation runs.
+  show first, 24 tiles in total including pinned ones; **Load more…** shows the rest. Press **Pin**,
+  tap up to 24 languages and press **Done** to keep them at the top of the list; pins are saved to
+  your account. The number on a selected tile is the order translations are spoken in. Tap a
+  selected tile again to remove it. Languages are locked while a conversation runs.
 - **Claude settings**: open **Claude settings** on the setup screen to pick Opus 5.5, Sonnet 5.5
   or Haiku 5.5, and an effort from `low` to `max`. Changes apply from the next turn, and every
   turn shows how long Claude took and how long the voice took to start, so you can compare
@@ -129,7 +129,7 @@ All variables are required. Copy `.env.example` to `.env` for local development.
 | -------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | `ANTHROPIC_API_KEY`  | Anthropic API key for Claude.                                                                                                    |
 | `ELEVENLABS_API_KEY` | ElevenLabs API key with Speech to Text and Text to Speech access.                                                                |
-| `DATABASE_URL`       | PostgreSQL connection string for sign-in sessions.                                                                               |
+| `DATABASE_URL`       | PostgreSQL connection string for sign-in sessions and pinned languages.                                                          |
 | `ORIGIN`             | Public base URL of the app, e.g. `http://localhost:5173`.                                                                        |
 | `BETTER_AUTH_SECRET` | High-entropy secret (at least 32 characters) that signs sessions.                                                                |
 | `OIDC_DISCOVERY_URL` | Full discovery document URL, e.g. `https://auth.example.com/.well-known/openid-configuration`; the issuer URL alone is rejected. |

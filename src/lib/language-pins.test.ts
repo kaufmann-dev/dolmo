@@ -1,90 +1,68 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { LanguagePins } from '#lib/language-pins.svelte.ts';
-import { SUPPORTED_LANGUAGES } from '#lib/languages.ts';
+import { MAX_PINNED_LANGUAGES, SUPPORTED_LANGUAGES, type LanguageCode } from '#lib/languages.ts';
 
-const KEY = 'dolmo.pinnedLanguages';
-
-let store: Map<string, string>;
-
-beforeEach(() => {
-	store = new Map();
-	vi.stubGlobal('localStorage', {
-		getItem: (key: string) => store.get(key) ?? null,
-		setItem: (key: string, value: string) => void store.set(key, value)
-	});
-});
-
-afterEach(() => {
-	vi.unstubAllGlobals();
-});
+function setup(initial: LanguageCode[] = []) {
+	const save = vi.fn(() => Promise.resolve());
+	const onError = vi.fn();
+	return { pins: new LanguagePins(initial, save, onError), save, onError };
+}
 
 describe('LanguagePins', () => {
-	it('pins and unpins a language and saves the result', () => {
-		const pins = new LanguagePins();
+	it('pins and unpins a language and saves the whole list', async () => {
+		const { pins, save } = setup();
 
 		pins.toggle('uk');
 		expect(pins.has('uk')).toBe(true);
-		expect(store.get(KEY)).toBe('["uk"]');
+		await vi.waitFor(() => expect(save).toHaveBeenLastCalledWith(['uk']));
 
 		pins.toggle('uk');
 		expect(pins.has('uk')).toBe(false);
-		expect(store.get(KEY)).toBe('[]');
+		await vi.waitFor(() => expect(save).toHaveBeenLastCalledWith([]));
 	});
 
-	it('refuses to pin more than the maximum but still unpins', () => {
-		const pins = new LanguagePins();
-		const first = SUPPORTED_LANGUAGES.slice(0, LanguagePins.MAX);
-		for (const code of first) pins.toggle(code);
+	it('refuses to pin more than the maximum but still unpins', async () => {
+		const first = SUPPORTED_LANGUAGES.slice(0, MAX_PINNED_LANGUAGES);
+		const { pins, save } = setup([...first]);
 
 		expect(pins.full).toBe(true);
-		pins.toggle(SUPPORTED_LANGUAGES[LanguagePins.MAX]);
+		pins.toggle(SUPPORTED_LANGUAGES[MAX_PINNED_LANGUAGES]);
 		expect(pins.codes).toEqual(first);
+		expect(save).not.toHaveBeenCalled();
 
 		pins.toggle(first[0]);
 		expect(pins.full).toBe(false);
-		expect(pins.has(first[0])).toBe(false);
+		await vi.waitFor(() => expect(save).toHaveBeenCalledTimes(1));
 	});
 
-	it('loads saved pins and drops unknown codes', () => {
-		store.set(KEY, JSON.stringify(['de', 'xx', 42, 'uk']));
-		const pins = new LanguagePins();
-		pins.load();
+	it('limits the initial pins to the maximum', () => {
+		const { pins } = setup([...SUPPORTED_LANGUAGES]);
 
-		expect(pins.codes).toEqual(['de', 'uk']);
+		expect(pins.codes).toEqual(SUPPORTED_LANGUAGES.slice(0, MAX_PINNED_LANGUAGES));
 	});
 
-	it('limits saved pins to the maximum', () => {
-		store.set(KEY, JSON.stringify(SUPPORTED_LANGUAGES));
-		const pins = new LanguagePins();
-		pins.load();
+	it('saves one change after another, each with the list as it is by then', async () => {
+		const { pins, save } = setup();
 
-		expect(pins.codes).toEqual(SUPPORTED_LANGUAGES.slice(0, LanguagePins.MAX));
-	});
-
-	it('starts without pins when the saved value is unreadable', () => {
-		store.set(KEY, '{not json');
-		const pins = new LanguagePins();
-		pins.load();
-		expect(pins.codes).toEqual([]);
-
-		store.set(KEY, '"de"');
-		pins.load();
-		expect(pins.codes).toEqual([]);
-	});
-
-	it('keeps pins for the visit when storage is unavailable', () => {
-		vi.stubGlobal('localStorage', {
-			getItem: () => {
-				throw new Error('blocked');
-			},
-			setItem: () => {
-				throw new Error('blocked');
-			}
-		});
-		const pins = new LanguagePins();
-		pins.load();
 		pins.toggle('de');
+		pins.toggle('uk');
+		await vi.waitFor(() => expect(save).toHaveBeenCalledTimes(2));
 
-		expect(pins.codes).toEqual(['de']);
+		expect(save).toHaveBeenNthCalledWith(1, ['de', 'uk']);
+		expect(save).toHaveBeenNthCalledWith(2, ['de', 'uk']);
+	});
+
+	it('reports a failed save, keeps the pin and saves again on the next change', async () => {
+		const save = vi.fn().mockRejectedValueOnce(new Error('offline')).mockResolvedValue(undefined);
+		const onError = vi.fn();
+		const pins = new LanguagePins([], save, onError);
+
+		pins.toggle('de');
+		await vi.waitFor(() => expect(onError).toHaveBeenCalledTimes(1));
+		expect(pins.has('de')).toBe(true);
+
+		pins.toggle('uk');
+		await vi.waitFor(() => expect(save).toHaveBeenLastCalledWith(['de', 'uk']));
+		expect(onError).toHaveBeenCalledTimes(1);
 	});
 });

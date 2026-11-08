@@ -99,6 +99,9 @@ export const SUPPORTED_LANGUAGES = [
 
 export type LanguageCode = (typeof SUPPORTED_LANGUAGES)[number];
 
+/** Most languages one user can pin to the top of the language grid. */
+export const MAX_PINNED_LANGUAGES = 24;
+
 const displayNames = new Intl.DisplayNames(['en'], { type: 'language' });
 
 export function languageName(code: string): string {

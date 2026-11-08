@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import CheckIcon from '@lucide/svelte/icons/check';
 	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
 	import HandIcon from '@lucide/svelte/icons/hand';
@@ -11,17 +10,14 @@
 	import { Label } from '#lib/components/ui/label/index.js';
 	import * as NativeSelect from '#lib/components/ui/native-select/index.js';
 	import LanguageGrid from '#lib/components/language-grid.svelte';
-	import { LanguagePins } from '#lib/language-pins.svelte.ts';
-	import { languageName } from '#lib/languages.ts';
+	import type { LanguagePins } from '#lib/language-pins.svelte.ts';
+	import { languageName, MAX_PINNED_LANGUAGES } from '#lib/languages.ts';
 	import { EFFORTS, MODEL_IDS, MODEL_LABELS } from '#lib/models.ts';
 	import type { TranslationSession } from '#lib/translation-session.svelte.ts';
 
-	let { session }: { session: TranslationSession } = $props();
+	let { session, pins }: { session: TranslationSession; pins: LanguagePins } = $props();
 
 	let settingsOpen = $state(false);
-
-	const pins = new LanguagePins();
-	onMount(() => pins.load());
 
 	const ready = $derived(session.languages.length >= 2);
 	const summary = $derived(session.languages.map((code) => languageName(code)).join(', '));
@@ -137,7 +133,7 @@
 		<div class="mx-auto flex w-full max-w-2xl flex-col gap-3">
 			{#if pins.editing}
 				<p class="truncate text-center text-sm text-muted-foreground tabular-nums">
-					Tap languages to pin them · {pins.codes.length} of {LanguagePins.MAX} pinned
+					Tap languages to pin them · {pins.codes.length} of {MAX_PINNED_LANGUAGES} pinned
 				</p>
 				<Button
 					size="lg"
