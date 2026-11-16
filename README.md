@@ -18,7 +18,7 @@ tab.
 
 ## Run Locally
 
-You need Node 22.17 or newer, pnpm, Podman, an Anthropic API key, an ElevenLabs API key with
+You need Node 26, pnpm 12, Podman, an Anthropic API key, an ElevenLabs API key with
 Speech to Text and Text to Speech access, and an OIDC client for sign-in (see
 [Authentication Setup](#authentication-setup)).
 
