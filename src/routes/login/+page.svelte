@@ -76,11 +76,15 @@
 	<nav aria-label="Legal" class="flex justify-center gap-4 text-sm text-muted-foreground">
 		<a
 			class="underline-offset-4 hover:text-foreground hover:underline"
-			href="https://legal.kaufmann.dev/imprint?site=dolmo.kaufmann.dev">Imprint</a
+			href="https://legal.kaufmann.dev/imprint?site=dolmo.kaufmann.dev"
 		>
+			Imprint
+		</a>
 		<a
 			class="underline-offset-4 hover:text-foreground hover:underline"
-			href="https://legal.kaufmann.dev/privacy?site=dolmo.kaufmann.dev">Privacy</a
+			href="https://legal.kaufmann.dev/privacy?site=dolmo.kaufmann.dev"
 		>
+			Privacy
+		</a>
 	</nav>
 </main>
